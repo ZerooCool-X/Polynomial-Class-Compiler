@@ -7,7 +7,7 @@ public class PolynomialClassCompiler {
         String s= Files.readString(Path.of("D:\\computer science\\codes\\IdeaProjects\\Bacholer\\Program\\Program.java"));
         code=new Code(s);
         code.check();
-        System.out.println(code);
+//        System.out.println(code);
 //        System.out.println(Parser.code);
 
         return true;
@@ -21,6 +21,9 @@ public class PolynomialClassCompiler {
             if(Parser.lineNumbers.get(i)==errorLine) System.err.print(Parser.code.charAt(i));
         }
         System.err.println();
+        System.err.println("_________________________________________________________________________________________________________________________");
+        System.err.println();
+
         System.err.println(error);
 
 //        System.out.println(code);

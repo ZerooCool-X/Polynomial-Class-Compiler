@@ -343,6 +343,7 @@ public class Parser {
         if (s.startsWith("int", start)) return true;
         if (s.startsWith("boolean", start)) return true;
         if (s.startsWith("String", start)) return true;
+        if (s.startsWith("double", start)) return true;
         if (s.startsWith("char", start)) return true;
         if (s.startsWith("void", start)) return true;
         if (s.startsWith("Scanner", start)) return true;
