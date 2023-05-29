@@ -4,14 +4,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 public class NonDeterministicallyPolynomialClassCompiler {
     static Code code;
-    public static boolean compile() throws Exception {
-        String s= Files.readString(Path.of("D:\\computer science\\codes\\IdeaProjects\\Bacholer\\Program\\Program.java"));
+    static String filePath;
+    public static void compile(String path) throws Exception {
+        filePath=path;
+        PolynomialClassCompiler.filePath=path;
+        String s= Files.readString(Path.of(filePath));
         code=new Code(s);
         Code.Method main= code.methods.get(0);
         Code.ForLoop initialLoops=null;
         ArrayList<Code.ForLoop>loops=new ArrayList<>();
-        if((main.instructions.size()==2)&&(main.instructions.get(1).getClass().equals(Code.ForLoop.class))){
-            initialLoops=(Code.ForLoop)main.instructions.get(1);
+        for(int i=0;i<main.instructions.size()-1;i++){
+            if(main.instructions.get(i).getClass().equals(Code.Statement.class)){
+                if(Parser.startsWithDataType(((Code.Statement)main.instructions.get(i)).leftHandSide,0)){
+                    PolynomialClassCompiler.throwError("All initialization statements before the exponential loops must be \"final\"", main.instructions.get(i).line);
+                }
+            }else{
+                PolynomialClassCompiler.throwError(" Only the initialization of variables declared as \"final\" can be used before the exponential loops", main.instructions.get(i).line);
+            }
+        }
+        if((main.instructions.size()>=2)&&(main.instructions.get(main.instructions.size()-1).getClass().equals(Code.ForLoop.class))){
+            initialLoops=(Code.ForLoop)main.instructions.get(main.instructions.size()-1);
             Code.ForLoop currentLoop=initialLoops;
             loops.add(currentLoop);
             while((currentLoop.inside.size()==1)&&(currentLoop.inside.get(0).getClass().equals(Code.ForLoop.class))){
@@ -43,6 +55,5 @@ public class NonDeterministicallyPolynomialClassCompiler {
 //            System.out.println(initialLoops.toString(0));
 
 //        System.err.println(magnitudes);
-        return true;
     }
 }

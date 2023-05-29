@@ -1,10 +1,11 @@
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.Scanner;
 
 public class Compiler {
-    public static boolean compile() throws Exception {
-        ProcessBuilder pb = new ProcessBuilder("javac", "D:\\computer science\\codes\\IdeaProjects\\Bacholer\\Program\\Program.java");
+    public static boolean compile(String path,String filename) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder("javac", path+"\\"+filename);
         pb.redirectErrorStream(true);
         Process process = pb.start();
 
@@ -16,7 +17,7 @@ public class Compiler {
 
         int exitCode = process.waitFor();
 
-        Path directory = Paths.get("D:\\computer science\\codes\\IdeaProjects\\Bacholer\\Program");
+        Path directory = Paths.get(path);
         Files.walk(directory)
                 .filter(p -> p.toString().endsWith(".class"))
                 .forEach(p -> {
@@ -36,13 +37,13 @@ public class Compiler {
 
 
 
-    public static void execute() throws Exception {
-        ProcessBuilder pb = new ProcessBuilder("java", "Program.java");
-        pb.directory(new File("D:\\computer science\\codes\\IdeaProjects\\Bacholer\\Program"));
+    public static void execute(String path,String fileName,String in) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder("java", fileName);
+        pb.directory(new File(path));
         Process p = pb.start();
 
         //input, not interactive
-        InputStream fileInput = new FileInputStream("D:\\computer science\\codes\\IdeaProjects\\Bacholer\\Program\\In.txt");
+        InputStream fileInput = new ByteArrayInputStream(in.getBytes());
         OutputStream input = p.getOutputStream();
         byte[] buffer = new byte[1024];
         int bytesRead;

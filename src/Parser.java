@@ -33,13 +33,18 @@ public class Parser {
 
             //Methods
             boolean foundStatic = false;
-            if (code.startsWith("public ", i) || code.startsWith("static ", i)) {
-                if (code.startsWith("static ", i)) foundStatic = true;
-                i += 7;
-                if (code.startsWith("public ", i) || code.startsWith("static ", i)) {
-                    if (code.startsWith("static ", i)) foundStatic = true;
-                    i += 7;
+            if (code.startsWith("public ", i) || code.startsWith("static ", i) || code.startsWith("final ", i)) {
+                while (code.startsWith("static ", i)||code.startsWith("public ", i)||code.startsWith("final ", i)){
+                    if (code.startsWith("public ", i)) {
+                        i += 7;
+                    }else if(code.startsWith("static ", i)){
+                        i += 7;
+                        foundStatic = true;
+                    }else{
+                        i += 6;
+                    }
                 }
+
 
                 if (!foundStatic) {
 
@@ -172,6 +177,14 @@ public class Parser {
                 int start = i;
                 while (code.charAt(start) != '(') start++;
                 inst.condition = new Code.Expression(code.substring(start + 1, closingBracket[start]));
+
+                String[] bound = inst.condition.checkBooleanExpression();
+                if (bound == null) {
+                    PolynomialClassCompiler.throwError("The condition of the while loop must be of the form \"(counter<polynomialInN)&&(otherBooleanStatement)&&(otherBooleanStatement)&&..\"", inst.line);
+                }
+                boolean isLessThan = inst.condition.isLessThan();
+                inst.counterName = bound[0];
+
 
                 start = closingBracket[start] + 1;
                 if (code.charAt(start) == '{') {
@@ -326,7 +339,7 @@ public class Parser {
     }
 
     static String statsWithReservedWord(String s, int start) {
-        String[] reserved = {"abstract", "assert", "case", "catch", "const", "default", "do", "enum", "extends", "final",
+        String[] reserved = {"abstract", "assert", "case", "catch", "const", "default", "do", "enum", "extends",
                 "finally", "goto", "implements", "instanceof", "interface", "native", "package", "private", "protected",
                 "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient","try", "volatile"};
 
@@ -354,6 +367,7 @@ public class Parser {
     static boolean isNumber(String s) {
         for (int i = 0; i < s.length(); i++) {
             if (i == 0 && s.charAt(i) == '-') continue;
+            if(s.charAt(i)=='.')continue;
             if (s.charAt(i) < '0' || s.charAt(i) > '9') return false;
         }
         return true;

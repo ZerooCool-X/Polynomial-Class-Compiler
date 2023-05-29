@@ -11,14 +11,17 @@ public class Code {
         imports = new ArrayList<>();
         staticVariables = new ArrayList<>();
         Parser.parseCode(this, s);
+        boolean found=false;
         for (int i = 0; i < methods.size(); i++) {
             Method current = methods.get(i);
             if (current.name.equals("main") && current.returnType.equals("void") && current.paramTypes.size() == 1 && current.paramTypes.get(0).equals("String[]")) {
                 methods.set(i, methods.get(0));
                 methods.set(0, current);
+                found=true;
                 break;
             }
         }
+        if(!found)PolynomialClassCompiler.throwError("Code must have a main method", line);
     }
 
     public void check() {
@@ -106,15 +109,32 @@ public class Code {
         }
 
         public void check() {
+            int cnt = countMethodCalls();
+
+
             if (name.equals("main")) {
+                for(int i=1;i<instructions.size();i++){
+                    if(instructions.get(i).getClass().equals(Statement.class)){
+                        Statement initial=(Statement)instructions.get(i);
+                        if(initial.rightHandSide!=null&&!Parser.isNumber(initial.rightHandSide.toString())){
+                            String[] left=initial.leftHandSide.toString().split(" ");
+                            String name=left[left.length-1];
+                            for(int j=i+1;j<instructions.size();j++) {
+                                if(instructions.get(j).getClass().equals(WhileLoop.class)&&((WhileLoop)instructions.get(j)).counterName.equals(name))
+                                    PolynomialClassCompiler.throwError("The counter of the loop must be initialized with a constant", initial.line);
+                            }
+                        }
+                    }
+                }
                 for (int i = 1; i < instructions.size(); i++) instructions.get(i).check(true, true);
             } else {
                 if (paramTypes.isEmpty() || !paramTypes.get(0).equals("int") || !paramNames.get(0).equals("Lim")) {
-                    PolynomialClassCompiler.throwError("The fist parameter of all methods except the main method must be an\nint variable called Lim that limits the depth of the recursive calls", line);
+                    PolynomialClassCompiler.throwError("The fist parameter of all recursive methods except the main method must be an\nint variable called Lim that limits the depth of the recursive calls", line);
                 }
                 if (instructions.isEmpty() || !instructions.get(0).getClass().equals(IfCondition.class) ||
                         !((IfCondition) instructions.get(0)).condition.equals("Lim<=0")) {
-                    PolynomialClassCompiler.throwError("The fist line of all methods except main must be a base case when Lim<=0\nexample: if(Lim<=0)return 0;", line);
+                    if(cnt!=0)
+                        PolynomialClassCompiler.throwError("The fist line of all methods except main must be a base case when Lim<=0\nexample: if(Lim<=0)return 0;", line);
                 } else {
                     boolean found = false;
                     for (Instruction i : ((IfCondition) instructions.get(0)).thenPart) {
@@ -131,7 +151,21 @@ public class Code {
 
 
                 }
-                int cnt = countMethodCalls();
+
+
+                for(int i=0;i<instructions.size();i++){
+                    if(instructions.get(i).getClass().equals(Statement.class)){
+                        Statement initial=(Statement)instructions.get(i);
+                        if(initial.rightHandSide!=null&&!Parser.isNumber(initial.rightHandSide.toString())){
+                            String[] left=initial.leftHandSide.toString().split(" ");
+                            String name=left[left.length-1];
+                            for(int j=i+1;j<instructions.size();j++) {
+                                if(instructions.get(j).getClass().equals(WhileLoop.class)&&((WhileLoop)instructions.get(j)).counterName.equals(name))
+                                    PolynomialClassCompiler.throwError("The counter of the loop must be initialized with a constant", initial.line);
+                            }
+                        }
+                    }
+                }
                 for (Instruction i : instructions) i.check(false, cnt < 2);
             }
 
@@ -220,6 +254,21 @@ public class Code {
                     PolynomialClassCompiler.throwError("The loop counter can only be decremented to grantee termination", line);
 
                 variableChanged(counterName, false);
+            }
+
+
+            for(int i=0;i<inside.size();i++){
+                if(inside.get(i).getClass().equals(Statement.class)){
+                    Statement initial=(Statement)inside.get(i);
+                    if(initial.rightHandSide!=null&&!Parser.isNumber(initial.rightHandSide.toString())){
+                        String[] left=initial.leftHandSide.toString().split(" ");
+                        String name=left[left.length-1];
+                        for(int j=i+1;j<inside.size();j++) {
+                            if(inside.get(j).getClass().equals(WhileLoop.class)&&((WhileLoop)inside.get(j)).counterName.equals(name))
+                                PolynomialClassCompiler.throwError("The counter of the loop must be initialized with a constant", initial.line);
+                        }
+                    }
+                }
             }
             for (Instruction i : inside) i.check(isMainMethod, hasSingleMethodCall);
 
@@ -334,6 +383,23 @@ public class Code {
                 }
                 variableChanged(counterName, false);
             }
+
+
+
+            for(int i=0;i<inside.size();i++){
+                if(inside.get(i).getClass().equals(Statement.class)){
+                    Statement initial=(Statement)inside.get(i);
+                    if(initial.rightHandSide!=null&&!Parser.isNumber(initial.rightHandSide.toString())){
+                        String[] left=initial.leftHandSide.toString().split(" ");
+                        String name=left[left.length-1];
+                        for(int j=i+1;j<inside.size();j++) {
+                            if(inside.get(j).getClass().equals(WhileLoop.class)&&((WhileLoop)inside.get(j)).counterName.equals(name))
+                                PolynomialClassCompiler.throwError("The counter of the loop must be initialized with a constant", initial.line);
+                        }
+                    }
+                }
+            }
+
             for (Instruction i : inside) i.check(isMainMethod, hasSingleMethodCall);
 
         }
@@ -390,9 +456,38 @@ public class Code {
             condition.checkVariableChange(line);
             condition.checkMethodCalls(isMainMethod, hasSingleMethodCall, line);
 
+
+            for(int i=0;i<thenPart.size();i++){
+                if(thenPart.get(i).getClass().equals(Statement.class)){
+                    Statement initial=(Statement)thenPart.get(i);
+                    if(initial.rightHandSide!=null&&!Parser.isNumber(initial.rightHandSide.toString())){
+                        String[] left=initial.leftHandSide.toString().split(" ");
+                        String name=left[left.length-1];
+                        for(int j=i+1;j<thenPart.size();j++) {
+                            if(thenPart.get(j).getClass().equals(WhileLoop.class)&&((WhileLoop)thenPart.get(j)).counterName.equals(name))
+                                PolynomialClassCompiler.throwError("The counter of the loop must be initialized with a constant", initial.line);
+                        }
+                    }
+                }
+            }
+
             for (Instruction i : thenPart) i.check(isMainMethod, hasSingleMethodCall);
-            if (elsePart != null)
+            if (elsePart != null) {
+                for(int i=0;i<elsePart.size();i++){
+                    if(elsePart.get(i).getClass().equals(Statement.class)){
+                        Statement initial=(Statement)elsePart.get(i);
+                        if(initial.rightHandSide!=null&&!Parser.isNumber(initial.rightHandSide.toString())){
+                            String[] left=initial.leftHandSide.toString().split(" ");
+                            String name=left[left.length-1];
+                            for(int j=i+1;j<elsePart.size();j++) {
+                                if(elsePart.get(j).getClass().equals(WhileLoop.class)&&((WhileLoop)elsePart.get(j)).counterName.equals(name))
+                                    PolynomialClassCompiler.throwError("The counter of the loop must be initialized with a constant", initial.line);
+                            }
+                        }
+                    }
+                }
                 for (Instruction i : elsePart) i.check(isMainMethod, hasSingleMethodCall);
+            }
         }
 
         public void variableChanged(String variableName, boolean increase) {
@@ -434,7 +529,7 @@ public class Code {
         }
 
         public void check(boolean isMainMethod, boolean hasSingleMethodCall) {
-            if (leftHandSide.split(" ").length == 2 && leftHandSide.split(" ")[1].equals("N")) {
+            if (leftHandSide.split(" ").length >= 2 && leftHandSide.split(" ")[leftHandSide.split(" ").length-1].equals("N")) {
                 PolynomialClassCompiler.throwError("The variable name N is reserved for the complexity limiter", line);
             }
             if (leftHandSide.split(" ").length == 2 && leftHandSide.split(" ")[0].equals("Scanner") && !leftHandSide.split(" ")[1].equals("sc")) {
@@ -444,10 +539,12 @@ public class Code {
                 PolynomialClassCompiler.throwError("The variable name Lim is reserved for the complexity limiter", line);
             }
 
-            if (leftHandSide.equals("N") || leftHandSide.equals("N+") || leftHandSide.equals("N++")) {
+            if (leftHandSide.equals("N")  || leftHandSide.equals("N++")||leftHandSide.equals("N--")||
+                    (leftHandSide.length()==2&&leftHandSide.startsWith("N")&&Parser.isSymbol(leftHandSide.charAt(leftHandSide.length()-1)))) {
                 PolynomialClassCompiler.throwError("Changing the value of variable N is prohibited", line);
             }
-            if ((leftHandSide.equals("Lim") || leftHandSide.equals("Lim+") || leftHandSide.equals("Lim++")) && !isMainMethod) {
+            if ((leftHandSide.equals("Lim") || leftHandSide.equals("Lim+") || leftHandSide.equals("Lim++")|| leftHandSide.equals("Lim--")||
+                    (leftHandSide.length()==4&&leftHandSide.startsWith("Lim")&&Parser.isSymbol(leftHandSide.charAt(leftHandSide.length()-1)))) && !isMainMethod) {
                 PolynomialClassCompiler.throwError("Changing the value of variable Lim is prohibited", line);
             }
 
@@ -524,7 +621,7 @@ public class Code {
                 return;
             }
             for (int i = 1; i < expression.length() - 1; i++) {
-                if (expression.charAt(i) == '=' && expression.charAt(i + 1) != '=' && expression.charAt(i - 1) != '<' && expression.charAt(i - 1) != '>' && expression.charAt(i - 1) != '=') {
+                if (expression.charAt(i) == '=' && expression.charAt(i + 1) != '=' && expression.charAt(i - 1) != '!' && expression.charAt(i - 1) != '<' && expression.charAt(i - 1) != '>' && expression.charAt(i - 1) != '=') {
                     PolynomialClassCompiler.throwError("Can't change variables value inside the expressions", line);
                     return;
                 }
@@ -585,9 +682,11 @@ public class Code {
             for (int i = 1; i < expression.length(); i++) {
                 if (expression.charAt(i) == '(' && !Parser.isSymbol(expression.charAt(i - 1))) {
                     int jnd = i - 1;
-                    while (jnd != 0 && (!Parser.isSymbol(expression.charAt(jnd)) || expression.charAt(jnd) == '.'))
+                    while (jnd != 0 && (!Parser.isSymbol(expression.charAt(jnd))))
+                    {
                         jnd--;
-                    if (!expression.startsWith("Math.", jnd + 1)) {
+                    }
+                    if (expression.charAt(jnd)!='.') {
                         cnt++;
                     }
                 }
@@ -598,6 +697,14 @@ public class Code {
         public void checkMethodCalls(boolean isMainMethod, boolean hasSingleMethodCall, int line) {
             for (int i = 1; i < expression.length(); i++) {
                 if (expression.charAt(i) == '(' && !Parser.isSymbol(expression.charAt(i - 1))) {
+                    int jnd = i - 1;
+                    while (jnd != 0 && (!Parser.isSymbol(expression.charAt(jnd))))
+                    {
+                        jnd--;
+                    }
+                    if (expression.charAt(jnd)=='.') {
+                        continue;
+                    }
 
                     if (isMainMethod) {
                         int ind = i;
@@ -790,7 +897,6 @@ public class Code {
             return order;
 
         }
-
         public boolean equals(String s) {
             return s.equals(expression);
         }
